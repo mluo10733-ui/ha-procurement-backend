@@ -389,6 +389,12 @@ def parse_invoice(file_field, po_map=None):
         rows = parse_invoice_rows_with_separate_ean(lines, text)
     if not rows:
         raise ValueError("未能从发票中识别产品行，请确认 PDF 可复制文字")
+    # Some invoices print an article number on the item line and the actual
+    # 13-digit EAN on a following `EAN:` line. Prefer that explicit labelled
+    # value when every parsed item has one.
+    labelled_eans = extract_labelled_eans(text)
+    if len(labelled_eans) == len(rows):
+        rows = [{**row, "ean": labelled_eans[idx]} for idx, row in enumerate(rows)]
     normalized_rows = [{"ean": display_ean(row.get("ean")), "key": normalize_ean(row.get("ean")), "name": row["name"], "qty": row["qty"], "price": row["price"], "price_candidates": row.get("price_candidates", [])} for row in rows]
     if po_map:
         normalized_rows = align_invoice_prices_with_po(normalized_rows, po_map)
@@ -603,6 +609,11 @@ def extract_money_numbers(text):
 def first_ean(text):
     match = EAN_RE.search(clean_text(text))
     return match.group(0) if match else ""
+
+
+def extract_labelled_eans(text):
+    """Extract explicit 13-digit EAN values printed with an EAN label."""
+    return [match.group(1) for match in re.finditer(r"\bEAN\s*:\s*([0-9]{13})\b", clean_text(text), flags=re.I)]
 
 
 def strip_trailing_qty_from_name(name):
