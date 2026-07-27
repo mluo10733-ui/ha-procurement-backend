@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import html
+import json
 import mimetypes
 import os
 import re
@@ -343,6 +344,15 @@ class ToolHandler(BaseHTTPRequestHandler):
             links.append(f'<a download href="{rel_link(po_path)}">Download PO</a>')
             links.append(f'<a download href="{rel_link(error_path)}">Download Error Report</a>')
 
+            if self.headers.get("Accept", "").find("application/json") >= 0:
+                self.send_json(200, {
+                    "ok": True,
+                    "offer_download_url": rel_link(offer_path) if offer_path else None,
+                    "po_download_url": rel_link(po_path),
+                    "error_download_url": rel_link(error_path),
+                })
+                return
+
             content = f"""
 <section class="result">
   <h2>Generated files</h2>
@@ -361,6 +371,14 @@ class ToolHandler(BaseHTTPRequestHandler):
             self.send_html(page(content))
         except Exception as exc:
             self.send_html(index_page(f"Generate failed: {exc}"), 400)
+
+    def send_json(self, status: int, payload: dict) -> None:
+        data = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+        self.send_response(status)
+        self.send_header("Content-Type", "application/json; charset=utf-8")
+        self.send_header("Content-Length", str(len(data)))
+        self.end_headers()
+        self.wfile.write(data)
 
     def send_download(self, query: str) -> None:
         params = parse_qs(query)
