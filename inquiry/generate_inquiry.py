@@ -19,8 +19,8 @@ from openpyxl.worksheet.table import Table, TableStyleInfo
 
 AUTO_SHEET_DEFAULT = "Suggestion Export"
 HA_SHEET_DEFAULT = "Stock"
-PO_TOOL_DIR = Path(r"D:\luomeiqi.1\Documents\automated PO")
-PO_TOOL_SCRIPT = PO_TOOL_DIR / "scripts" / "generate_po_offer.py"
+PO_TOOL_DIR = Path(__file__).resolve().parents[1]
+PO_TOOL_SCRIPT = PO_TOOL_DIR / "po-offer" / "generate_po_offer.py"
 XML_NS = {
     "main": "http://schemas.openxmlformats.org/spreadsheetml/2006/main",
     "rel": "http://schemas.openxmlformats.org/officeDocument/2006/relationships",
