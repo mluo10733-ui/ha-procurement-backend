@@ -393,7 +393,7 @@ def parse_invoice(file_field, po_map=None):
     # 13-digit EAN on a following `EAN:` line. Prefer that explicit labelled
     # value when every parsed item has one.
     labelled_eans = extract_labelled_eans(text)
-    if len(labelled_eans) == len(rows):
+    if len(labelled_eans) >= len(rows):
         rows = [{**row, "ean": labelled_eans[idx]} for idx, row in enumerate(rows)]
     normalized_rows = [{"ean": display_ean(row.get("ean")), "key": normalize_ean(row.get("ean")), "name": row["name"], "qty": row["qty"], "price": row["price"], "price_candidates": row.get("price_candidates", [])} for row in rows]
     if po_map:
