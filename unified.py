@@ -27,6 +27,11 @@ def start_services():
 
 
 class Gateway(BaseHTTPRequestHandler):
+    def _cors(self):
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, PUT, OPTIONS")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type")
+
     def _target(self):
         for prefix, (port, _, _) in SERVICES.items():
             if self.path == prefix or self.path.startswith(prefix + "/"):
@@ -49,6 +54,7 @@ class Gateway(BaseHTTPRequestHandler):
                 for key, value in response.headers.items():
                     if key.lower() not in {"content-length", "transfer-encoding", "connection"}:
                         self.send_header(key, value)
+                self._cors()
                 self.send_header("Content-Length", str(len(payload)))
                 self.end_headers()
                 self.wfile.write(payload)
@@ -56,16 +62,27 @@ class Gateway(BaseHTTPRequestHandler):
             payload = error.read()
             self.send_response(error.code)
             self.send_header("Content-Type", error.headers.get("Content-Type", "text/plain"))
+            self._cors()
             self.send_header("Content-Length", str(len(payload)))
             self.end_headers()
             self.wfile.write(payload)
         except Exception as error:
-            self.send_error(502, f"Backend unavailable: {error}")
+            self.send_response(502)
+            self._cors()
+            payload = f"Backend unavailable: {error}".encode()
+            self.send_header("Content-Type", "text/plain; charset=utf-8")
+            self.send_header("Content-Length", str(len(payload)))
+            self.end_headers()
+            self.wfile.write(payload)
 
     do_GET = _proxy
     do_POST = _proxy
     do_PUT = _proxy
-    do_OPTIONS = _proxy
+    def do_OPTIONS(self):
+        self.send_response(204)
+        self._cors()
+        self.send_header("Content-Length", "0")
+        self.end_headers()
 
 
 def shutdown(*_):
