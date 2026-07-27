@@ -395,6 +395,9 @@ def parse_invoice(file_field, po_map=None):
     labelled_eans = extract_labelled_eans(text)
     if len(labelled_eans) >= len(rows):
         rows = [{**row, "ean": labelled_eans[idx]} for idx, row in enumerate(rows)]
+    model_names = extract_model_product_names(text)
+    if len(model_names) >= len(rows):
+        rows = [{**row, "name": model_names[idx]} for idx, row in enumerate(rows)]
     normalized_rows = [{"ean": display_ean(row.get("ean")), "key": normalize_ean(row.get("ean")), "name": row["name"], "qty": row["qty"], "price": row["price"], "price_candidates": row.get("price_candidates", [])} for row in rows]
     if po_map:
         normalized_rows = align_invoice_prices_with_po(normalized_rows, po_map)
@@ -614,6 +617,22 @@ def first_ean(text):
 def extract_labelled_eans(text):
     """Extract explicit 13-digit EAN values printed with an EAN label."""
     return [match.group(1) for match in re.finditer(r"\bEAN\s*:\s*([0-9]{13})\b", clean_text(text), flags=re.I)]
+
+
+def extract_model_product_names(text):
+    """Extract model-number product lines such as `X3003/00 SHAVER ...`."""
+    names = []
+    model_line = re.compile(r"^([A-Z][A-Z0-9.-]{2,}/[A-Z0-9]{2})\s+(.+)$", re.I)
+    for raw_line in text.splitlines():
+        line = clean_text(raw_line)
+        match = model_line.match(line)
+        if not match:
+            continue
+        description = re.split(r"\s+(?:Beheerbijdrage|btw\b|VAT\b|Tax\b)", match.group(2), maxsplit=1, flags=re.I)[0]
+        description = clean_invoice_name(description)
+        if description:
+            names.append(f"{match.group(1)} {description}".strip())
+    return names
 
 
 def strip_trailing_qty_from_name(name):
