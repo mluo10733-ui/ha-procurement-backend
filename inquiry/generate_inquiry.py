@@ -415,6 +415,13 @@ def supplier_code_matches(value, supplier_code):
     return text.upper() == target.upper()
 
 
+def supplier_code_contained(value, supplier_code):
+    """Match a supplier code appearing anywhere in a Supplier # cell."""
+    text = str(value or "").strip().upper()
+    target = str(supplier_code or "").strip().upper()
+    return bool(text and target and target in text)
+
+
 def apply_price_priority(row, ha_by_sku, auto_by_sku):
     sku = row.get("sku")
     ha = ha_by_sku.get(sku, {})
@@ -860,7 +867,13 @@ def generate(auto_path, ha_path, supplier_code, output_dir, inventory_path=None,
 
         ha_candidates = []
         for ha in ha_rows:
-            if not supplier_code_matches(ha.get("last_supplier_no"), supplier_code):
+            last_supplier_no = str(ha.get("last_supplier_no") or "").strip()
+            matches_last_supplier = supplier_code_matches(last_supplier_no, supplier_code)
+            matches_supplier_column_without_last = (
+                not last_supplier_no
+                and supplier_code_contained(ha.get("supplier_no"), supplier_code)
+            )
+            if not (matches_last_supplier or matches_supplier_column_without_last):
                 continue
             if not eligible_ha_replenishment(ha):
                 if should_exclude_vendor_eol(ha):
