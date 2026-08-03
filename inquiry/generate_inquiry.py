@@ -419,7 +419,18 @@ def supplier_code_contained(value, supplier_code):
     """Match a supplier code appearing anywhere in a Supplier # cell."""
     text = str(value or "").strip().upper()
     target = str(supplier_code or "").strip().upper()
-    return bool(text and target and target in text)
+    if not text or not target:
+        return False
+    if target in text:
+        return True
+    # Some HA exports store Supplier # as only the numeric suffix (000443),
+    # while the workbench input uses the canonical Vendor_000443 form.
+    target_suffix = re.sub(r"^VENDOR[_ -]?", "", target)
+    return bool(target_suffix and target_suffix != target and target_suffix in text)
+
+
+def is_blank_supplier_value(value):
+    return str(value or "").strip().upper() in {"", "NULL", "NONE", "NAN", "N/A", "-"}
 
 
 def apply_price_priority(row, ha_by_sku, auto_by_sku):
@@ -870,7 +881,7 @@ def generate(auto_path, ha_path, supplier_code, output_dir, inventory_path=None,
             last_supplier_no = str(ha.get("last_supplier_no") or "").strip()
             matches_last_supplier = supplier_code_matches(last_supplier_no, supplier_code)
             matches_supplier_column_without_last = (
-                not last_supplier_no
+                is_blank_supplier_value(last_supplier_no)
                 and supplier_code_contained(ha.get("supplier_no"), supplier_code)
             )
             if not (matches_last_supplier or matches_supplier_column_without_last):
