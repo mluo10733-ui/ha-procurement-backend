@@ -412,7 +412,10 @@ def supplier_code_matches(value, supplier_code):
     vendor_codes = re.findall(r"Vendor_\d+", text, flags=re.IGNORECASE)
     if vendor_codes:
         return any(code.upper() == target.upper() for code in vendor_codes)
-    return text.upper() == target.upper()
+    if text.upper() == target.upper():
+        return True
+    target_suffix = re.sub(r"^VENDOR[_ -]?", "", target.upper())
+    return bool(target_suffix and target_suffix != target.upper() and text.upper() == target_suffix)
 
 
 def supplier_code_contained(value, supplier_code):
