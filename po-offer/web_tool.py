@@ -16,7 +16,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, quote, unquote, urlparse
 
-from generate_po_offer import BASE_DIR, build_outputs, get_reference_paths, load_config
+from generate_po_offer import BASE_DIR, build_outputs, get_reference_paths, load_config, read_error_rows
 from generate_po_offer import OUTPUT_DIR
 
 
@@ -350,6 +350,7 @@ class ToolHandler(BaseHTTPRequestHandler):
                     "offer_download_url": rel_link(offer_path) if offer_path else None,
                     "po_download_url": rel_link(po_path),
                     "error_download_url": rel_link(error_path),
+                    "errors": read_error_rows(error_path),
                 })
                 return
 

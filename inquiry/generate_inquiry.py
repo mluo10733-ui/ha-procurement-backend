@@ -666,11 +666,14 @@ def generate_po_offer_files(output_dir, supplier_code, rows, inventory_path, tim
             error_path = error_path.with_name(f"{error_path.stem}_fallback_{datetime.now().strftime('%H%M%S')}.xlsx")
             error_wb.save(error_path)
 
+    errors = po_module.read_error_rows(error_path) if hasattr(po_module, "read_error_rows") else []
+
     return {
         "po_input_path": str(po_input_path.resolve()),
         "po_path": str(po_path.resolve()),
         "offer_path": str(offer_path.resolve()) if offer_path else None,
         "error_path": str(error_path.resolve()),
+        "errors": errors,
         "po_item_count": included,
     }
 

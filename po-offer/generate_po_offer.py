@@ -556,6 +556,22 @@ def build_outputs(
     return offer_path, po_path, error_path
 
 
+def read_error_rows(error_path):
+    """Read generated error-report rows for API clients that render them inline."""
+    if not error_path or not Path(error_path).exists():
+        return []
+    wb = load_workbook(error_path, read_only=True, data_only=True)
+    ws = wb.active
+    header_values = next(ws.iter_rows(min_row=1, max_row=1, values_only=True), ())
+    headers = [str(value or "").strip() for value in header_values]
+    rows = []
+    for values in ws.iter_rows(min_row=2, values_only=True):
+        if not any(value not in (None, "") for value in values):
+            continue
+        rows.append({headers[idx]: values[idx] for idx in range(min(len(headers), len(values))) if headers[idx]})
+    return rows
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Generate OPC offer and Bulk Import PO files.")
     parser.add_argument("input", nargs="?", help="输入表路径；不填时使用上次输入过的文件")
