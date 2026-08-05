@@ -830,6 +830,13 @@ def generate(auto_path, ha_path, supplier_code, output_dir, inventory_path=None,
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
+    # The web UI uses `inventory` for the full inventory matching option,
+    # while the generator's internal name is `full_inventory`.
+    if mode in {"inventory", "full-inventory", "full_inventory"}:
+        mode = "full_inventory"
+    else:
+        mode = "vendor"
+
     ha_by_sku, ha_rows = build_ha_records(ha_path)
 
     if mode == "full_inventory":
