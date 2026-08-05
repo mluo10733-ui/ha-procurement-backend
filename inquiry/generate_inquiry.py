@@ -244,6 +244,12 @@ def xml_find_sheet_path(zf, sheet_name):
 def find_workbook_sheet(wb, preferred_name):
     if preferred_name in wb.sheetnames:
         return wb[preferred_name]
+    # Auto PO exports are sometimes named Sheet1 instead of Suggestion Export.
+    # Prefer the first sheet whose header row contains the required fields.
+    for ws in wb.worksheets:
+        headers = build_header_map(ws, 1)
+        if normalize_header("SKU #") in headers and normalize_header("Vendor#") in headers:
+            return ws
     return wb[wb.sheetnames[0]]
 
 
@@ -254,7 +260,7 @@ def extract_auto_rows(auto_path, supplier_code=None):
 
     sku_col = find_col(headers, "SKU #")
     name_col = find_col(headers, "SKU name")
-    ean_col = find_col(headers, "UPC/EAN", "UPC/EAN Barcode", "Barcode")
+    ean_col = find_col(headers, "UPC/EAN", "UPC/EAN Barcode", "UPC/EAN Code", "Barcode")
     barcode_col = find_col(headers, "Barcode", required=False)
     vendor_col = find_col(headers, "Vendor#")
     qty_col = find_col(headers, "Replenish Qty")
