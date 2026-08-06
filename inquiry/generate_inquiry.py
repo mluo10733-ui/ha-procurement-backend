@@ -673,6 +673,12 @@ def generate_po_offer_files(output_dir, supplier_code, rows, inventory_path, tim
             error_wb.save(error_path)
 
     errors = po_module.read_error_rows(error_path) if hasattr(po_module, "read_error_rows") else []
+    offer_supplier_map = po_module.read_supplier_map(
+        PO_TOOL_DIR / "supplier offer information.xlsx.xlsx", "OPC-Bulk offer", "* Vendor #"
+    )
+    po_supplier_map = po_module.read_supplier_map(
+        PO_TOOL_DIR / "supplier PO information.xlsx.xlsx", "Sheet1", "* Vendor Code "
+    )
 
     return {
         "po_input_path": str(po_input_path.resolve()),
@@ -680,6 +686,16 @@ def generate_po_offer_files(output_dir, supplier_code, rows, inventory_path, tim
         "offer_path": str(offer_path.resolve()) if offer_path else None,
         "error_path": str(error_path.resolve()),
         "errors": errors,
+        "used_files": {
+            "input": str(po_input_path.resolve()),
+            "supplier_offer": str((PO_TOOL_DIR / "supplier offer information.xlsx.xlsx").resolve()),
+            "supplier_po": str((PO_TOOL_DIR / "supplier PO information.xlsx.xlsx").resolve()),
+            "site_product": str((PO_TOOL_DIR / "Export via custom template_460893_20260708044154.xlsx").resolve()),
+        },
+        "supplier_diagnostics": {
+            "offer_supplier_codes": sorted(offer_supplier_map),
+            "po_supplier_codes": sorted(po_supplier_map),
+        },
         "po_item_count": included,
     }
 

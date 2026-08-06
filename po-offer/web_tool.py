@@ -16,7 +16,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, quote, unquote, urlparse
 
-from generate_po_offer import BASE_DIR, build_outputs, get_reference_paths, load_config, read_error_rows
+from generate_po_offer import BASE_DIR, build_outputs, get_reference_paths, load_config, read_error_rows, read_supplier_map
 from generate_po_offer import OUTPUT_DIR
 
 
@@ -337,6 +337,8 @@ class ToolHandler(BaseHTTPRequestHandler):
                 site_product_path=site_product_path,
                 run_stamp=f"web_{stamp}",
             )
+            offer_supplier_map = read_supplier_map(offer_info_path, "OPC-Bulk offer", "* Vendor #")
+            po_supplier_map = read_supplier_map(po_info_path, "Sheet1", "* Vendor Code ")
 
             links = []
             if offer_path:
@@ -351,6 +353,16 @@ class ToolHandler(BaseHTTPRequestHandler):
                     "po_download_url": rel_link(po_path),
                     "error_download_url": rel_link(error_path),
                     "errors": read_error_rows(error_path),
+                    "used_files": {
+                        "input": str(input_path),
+                        "supplier_offer": str(offer_info_path),
+                        "supplier_po": str(po_info_path),
+                        "site_product": str(site_product_path),
+                    },
+                    "supplier_diagnostics": {
+                        "offer_supplier_codes": sorted(offer_supplier_map),
+                        "po_supplier_codes": sorted(po_supplier_map),
+                    },
                 })
                 return
 
