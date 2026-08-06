@@ -272,7 +272,11 @@ def extract_auto_rows(auto_path, supplier_code=None):
 
     rows = []
     for row in ws.iter_rows(min_row=2, values_only=True):
-        if supplier_code and str(get_cell(row, vendor_col) or "").strip() != supplier_code:
+        # Vendor# values in exports are not always consistently cased or
+        # formatted (for example `vendor_000595` vs `Vendor_000595`). Use
+        # the same tolerant matcher as the HA supplier columns so a valid
+        # supplier is not silently reduced to an empty result.
+        if supplier_code and not supplier_code_matches(get_cell(row, vendor_col), supplier_code):
             continue
         if not is_existing_product(get_cell(row, new_product_col)):
             continue
