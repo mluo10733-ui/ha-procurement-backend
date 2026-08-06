@@ -621,7 +621,7 @@ def build_po_input_from_inquiry(output_dir, supplier_code, rows, inventory_path,
     return po_input_path, included, skipped
 
 
-def generate_po_offer_files(output_dir, supplier_code, rows, inventory_path, timestamp):
+def generate_po_offer_files(output_dir, supplier_code, rows, inventory_path, timestamp, supplier_offer_path=None, supplier_po_path=None, site_product_path=None):
     po_input_path, included, skipped = build_po_input_from_inquiry(
         output_dir, supplier_code, rows, inventory_path, timestamp
     )
@@ -630,12 +630,15 @@ def generate_po_offer_files(output_dir, supplier_code, rows, inventory_path, tim
     po_module.OUTPUT_DIR = output_dir
     stamp = f"{supplier_code}_PO_Offer_{timestamp}"
     run_output_dir = output_dir / stamp
+    supplier_offer_path = Path(supplier_offer_path) if supplier_offer_path else PO_TOOL_DIR / "supplier offer information.xlsx.xlsx"
+    supplier_po_path = Path(supplier_po_path) if supplier_po_path else PO_TOOL_DIR / "supplier PO information.xlsx.xlsx"
+    site_product_path = Path(site_product_path) if site_product_path else PO_TOOL_DIR / "Export via custom template_460893_20260708044154.xlsx"
     try:
         offer_path, po_path, error_path = po_module.build_outputs(
             input_path=po_input_path,
-            supplier_offer_path=PO_TOOL_DIR / "supplier offer information.xlsx.xlsx",
-            supplier_po_path=PO_TOOL_DIR / "supplier PO information.xlsx.xlsx",
-            site_product_path=PO_TOOL_DIR / "Export via custom template_460893_20260708044154.xlsx",
+            supplier_offer_path=supplier_offer_path,
+            supplier_po_path=supplier_po_path,
+            site_product_path=site_product_path,
             run_stamp=stamp,
         )
     except PermissionError as exc:
@@ -673,12 +676,8 @@ def generate_po_offer_files(output_dir, supplier_code, rows, inventory_path, tim
             error_wb.save(error_path)
 
     errors = po_module.read_error_rows(error_path) if hasattr(po_module, "read_error_rows") else []
-    offer_supplier_map = po_module.read_supplier_map(
-        PO_TOOL_DIR / "supplier offer information.xlsx.xlsx", "OPC-Bulk offer", "* Vendor #"
-    )
-    po_supplier_map = po_module.read_supplier_map(
-        PO_TOOL_DIR / "supplier PO information.xlsx.xlsx", "Sheet1", "* Vendor Code "
-    )
+    offer_supplier_map = po_module.read_supplier_map(supplier_offer_path, "OPC-Bulk offer", "* Vendor #")
+    po_supplier_map = po_module.read_supplier_map(supplier_po_path, "Sheet1", "* Vendor Code ")
 
     return {
         "po_input_path": str(po_input_path.resolve()),
@@ -688,9 +687,9 @@ def generate_po_offer_files(output_dir, supplier_code, rows, inventory_path, tim
         "errors": errors,
         "used_files": {
             "input": str(po_input_path.resolve()),
-            "supplier_offer": str((PO_TOOL_DIR / "supplier offer information.xlsx.xlsx").resolve()),
-            "supplier_po": str((PO_TOOL_DIR / "supplier PO information.xlsx.xlsx").resolve()),
-            "site_product": str((PO_TOOL_DIR / "Export via custom template_460893_20260708044154.xlsx").resolve()),
+            "supplier_offer": str(supplier_offer_path.resolve()),
+            "supplier_po": str(supplier_po_path.resolve()),
+            "site_product": str(site_product_path.resolve()),
         },
         "supplier_diagnostics": {
             "offer_supplier_codes": sorted(offer_supplier_map),
@@ -849,7 +848,7 @@ def build_full_inventory_rows(auto_path, ha_by_sku, ha_rows, supplier_code, inve
     return combined, auto_by_sku, stats
 
 
-def generate(auto_path, ha_path, supplier_code, output_dir, inventory_path=None, mode="vendor"):
+def generate(auto_path, ha_path, supplier_code, output_dir, inventory_path=None, mode="vendor", supplier_offer_path=None, supplier_po_path=None, site_product_path=None):
     auto_path = Path(auto_path)
     ha_path = Path(ha_path)
     output_dir = Path(output_dir)
@@ -968,7 +967,7 @@ def generate(auto_path, ha_path, supplier_code, output_dir, inventory_path=None,
         "total_inquiry_qty": sum(parse_number(row["inquiry_qty"]) for row in combined),
     }
     if inventory_path:
-        result["po_offer"] = generate_po_offer_files(output_dir, supplier_code, combined, inventory_path, timestamp)
+        result["po_offer"] = generate_po_offer_files(output_dir, supplier_code, combined, inventory_path, timestamp, supplier_offer_path, supplier_po_path, site_product_path)
     return result
 
 

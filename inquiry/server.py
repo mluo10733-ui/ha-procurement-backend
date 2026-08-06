@@ -141,6 +141,9 @@ class Handler(BaseHTTPRequestHandler):
                 auto_path = files.get("autoFile")
                 ha_path = files.get("haFile")
                 inventory_path = files.get("inventoryFile")
+                supplier_offer_path = files.get("supplierOfferFile")
+                supplier_po_path = files.get("supplierPoFile")
+                site_product_path = files.get("siteProductFile")
                 supplier_code = fields.get("supplierCode")
                 mode = fields.get("mode") or "vendor"
                 output_dir = str(OUTPUT_DIR)
@@ -149,6 +152,9 @@ class Handler(BaseHTTPRequestHandler):
                 auto_path = payload.get("autoPath")
                 ha_path = payload.get("haPath")
                 inventory_path = payload.get("inventoryPath")
+                supplier_offer_path = payload.get("supplierOfferPath")
+                supplier_po_path = payload.get("supplierPoPath")
+                site_product_path = payload.get("siteProductPath")
                 supplier_code = payload.get("supplierCode")
                 mode = payload.get("mode") or "vendor"
                 output_dir = payload.get("outputDir") or str(OUTPUT_DIR)
@@ -158,7 +164,7 @@ class Handler(BaseHTTPRequestHandler):
             if not auto_path or not ha_path or not supplier_code:
                 self._send(400, json.dumps({"error": "请上传表 A、表 B 并输入供应商编码。之后再次生成时可不重复上传表 A 和表 B。"}, ensure_ascii=False))
                 return
-            result = generate(auto_path, ha_path, supplier_code, output_dir, inventory_path, mode)
+            result = generate(auto_path, ha_path, supplier_code, output_dir, inventory_path, mode, supplier_offer_path, supplier_po_path, site_product_path)
             save_last_files(auto_path, ha_path)
             result["used_auto_path"] = str(Path(auto_path).resolve())
             result["used_ha_path"] = str(Path(ha_path).resolve())
