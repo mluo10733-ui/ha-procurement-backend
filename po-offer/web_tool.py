@@ -23,7 +23,7 @@ from generate_po_offer import OUTPUT_DIR
 HOST = os.getenv("HOST", "0.0.0.0")
 DEFAULT_PORT = 18888
 UPLOAD_DIR = Path(os.getenv("PO_UPLOAD_DIR", BASE_DIR / "web_uploads")).resolve()
-TOOL_VERSION = "2026-07-16 sku-missing-site-product-allowed"
+TOOL_VERSION = "2026-08-06 supplier-map-header-fix 3d6ddbd"
 
 
 def safe_filename(name: str) -> str:
