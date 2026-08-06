@@ -226,12 +226,21 @@ def col(headers: dict[str, int], name: str) -> int:
 def read_supplier_map(path: Path, sheet_name: str | None, vendor_header: str) -> dict[str, dict[str, object]]:
     wb = load_workbook(path, data_only=True)
     ws = wb[sheet_name] if sheet_name and sheet_name in wb.sheetnames else wb.worksheets[0]
-    headers = worksheet_headers(ws)
+    header_row = 2
+    headers = {}
+    for row_idx in range(1, min(ws.max_row, 12) + 1):
+        candidate = worksheet_headers(ws, row_idx)
+        if normalize_header(vendor_header) in candidate:
+            header_row = row_idx
+            headers = candidate
+            break
+    if not headers:
+        headers = worksheet_headers(ws, header_row)
     vendor_col = col(headers, vendor_header)
     header_by_col = {idx: name for name, idx in headers.items()}
     result = {}
-    for row in range(3, ws.max_row + 1):
-        vendor = normalize_key(ws.cell(row, vendor_col).value)
+    for row in range(header_row + 1, ws.max_row + 1):
+        vendor = normalize_key(ws.cell(row, vendor_col).value).upper()
         if not vendor:
             continue
         result[vendor] = {
@@ -459,7 +468,7 @@ def build_outputs(
     for source in input_rows:
         raw_sku = normalize_key(source.get("sku"))
         ean = normalize_key(source.get("ean"))
-        vendor = normalize_key(source.get("vendor"))
+        vendor = normalize_key(source.get("vendor")).upper()
         sku = raw_sku or upc_ean_to_sku.get(ean, "") or barcode_to_sku.get(ean, "")
         quantity = parse_quantity(source.get("quantity"))
         price_excl = parse_price_excl(source.get("price_excl"))
