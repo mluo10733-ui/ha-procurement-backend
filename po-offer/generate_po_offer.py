@@ -34,6 +34,7 @@ WAREHOUSE_CODE_MAP = {
 INPUT_HEADER_ALIASES = {
     "sku": {"sku", "sku#", "sku #", "* sku", "商品编码", "商品编号"},
     "ean": {"ean", "upc", "barcode", "条码", "ean码"},
+    "vendor_sku": {"vendor sku", "vendor sku code", "vendor_sku", "vendor sku#", "vendor sku #"},
     "vendor": {
         "vendor",
         "vendor #",
@@ -469,6 +470,7 @@ def build_outputs(
         raw_sku = normalize_key(source.get("sku"))
         ean = normalize_key(source.get("ean"))
         vendor = normalize_key(source.get("vendor")).upper()
+        vendor_sku = normalize_key(source.get("vendor_sku"))
         sku = raw_sku or upc_ean_to_sku.get(ean, "") or barcode_to_sku.get(ean, "")
         quantity = parse_quantity(source.get("quantity"))
         price_excl = parse_price_excl(source.get("price_excl"))
@@ -519,6 +521,7 @@ def build_outputs(
                 if key in offer_info and key in offer_headers:
                     write_by_header(offer_ws, offer_headers, offer_row, header, offer_info[key])
             write_by_header(offer_ws, offer_headers, offer_row, "SKU #", sku)
+            write_by_header(offer_ws, offer_headers, offer_row, "Vendor sku code", vendor_sku)
             write_by_header(offer_ws, offer_headers, offer_row, "price-excl", price_excl)
             format_by_header(offer_ws, offer_headers, offer_row, "price-excl", "0.00")
             offer_row += 1

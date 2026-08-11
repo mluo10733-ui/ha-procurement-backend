@@ -577,7 +577,7 @@ def build_po_input_from_inquiry(output_dir, supplier_code, rows, inventory_path,
     wb = Workbook()
     ws = wb.active
     ws.title = "PO Offer Input"
-    ws.append(["SKU", "EAN", "Vendor Code", "Quantity", "price-excl", "PO type"])
+    ws.append(["SKU", "EAN", "Vendor SKU", "Vendor Code", "Quantity", "price-excl", "PO type"])
 
     included = 0
     skipped = []
@@ -611,6 +611,7 @@ def build_po_input_from_inquiry(output_dir, supplier_code, rows, inventory_path,
         ws.append([
             item.get("sku"),
             item.get("upc_ean_barcode"),
+            "",
             supplier_code,
             quantity,
             float(price) if price is not None else None,
@@ -618,7 +619,7 @@ def build_po_input_from_inquiry(output_dir, supplier_code, rows, inventory_path,
         ])
         included += 1
 
-    for col, width in {"A": 15, "B": 22, "C": 18, "D": 12, "E": 12, "F": 12}.items():
+    for col, width in {"A": 15, "B": 22, "C": 18, "D": 18, "E": 12, "F": 12, "G": 12}.items():
         ws.column_dimensions[col].width = width
     ws.freeze_panes = "A2"
     wb.save(po_input_path)
