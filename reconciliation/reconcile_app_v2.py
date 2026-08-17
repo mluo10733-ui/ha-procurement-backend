@@ -417,6 +417,7 @@ def looks_like_pgnl_invoice(text):
 def parse_invoice_rows_with_pgnl(lines):
     """Parse P&G NL rows with the explicit 13-digit EAN and Netto prijs columns."""
     rows = []
+    seen_eans = set()
     amount = r"\d{1,3}(?:[.,]\d{3})*[.,]\d{2,3}"
     row_re = re.compile(
         r"^\s*\d+\s+[A-Z]{2}\s+(?P<name>.+?)\s+"
@@ -432,7 +433,8 @@ def parse_invoice_rows_with_pgnl(lines):
         name = clean_invoice_name(match.group("name"))
         qty = to_number(match.group("qty"))
         net_price = to_number(match.group("net"))
-        if is_valid_invoice_product_name(name) and qty is not None and net_price is not None:
+        if is_valid_invoice_product_name(name) and qty is not None and net_price is not None and match.group("ean") not in seen_eans:
+            seen_eans.add(match.group("ean"))
             rows.append({
                 "ean": match.group("ean"),
                 "name": name,
