@@ -373,7 +373,7 @@ def parse_invoice(file_field, po_map=None):
     try:
         od_text = extract_text_with_opendataloader(tmp_path)
         with pdfplumber.open(tmp_path) as pdf:
-            rows = parse_invoice_rows_by_headers(pdf.pages)
+            header_rows = parse_invoice_rows_by_headers(pdf.pages)
             text = "\n".join(page.extract_text(x_tolerance=1, y_tolerance=3) or "" for page in pdf.pages)
             if od_text:
                 text = text + "\n" + od_text
@@ -381,6 +381,10 @@ def parse_invoice(file_field, po_map=None):
         tmp_path.unlink(missing_ok=True)
 
     lines = [" ".join(line.split()) for line in text.splitlines() if line.strip()]
+    if looks_like_pgnl_invoice(text):
+        rows = parse_invoice_rows_with_pgnl(lines)
+    else:
+        rows = header_rows
     if not rows:
         rows = parse_invoice_rows_with_inline_ean(lines)
     if not rows:
@@ -402,6 +406,41 @@ def parse_invoice(file_field, po_map=None):
     if po_map:
         normalized_rows = align_invoice_prices_with_po(normalized_rows, po_map)
     return normalized_rows
+
+
+def looks_like_pgnl_invoice(text):
+    """Detect Procter & Gamble Netherlands (INVPGNL) invoice layout."""
+    normalized = normalize_header_text(text)
+    return "p&g code" in text.lower() and "ean code omdoos" in text.lower() and "netto prijs" in normalized
+
+
+def parse_invoice_rows_with_pgnl(lines):
+    """Parse P&G NL rows with the explicit 13-digit EAN and Netto prijs columns."""
+    rows = []
+    amount = r"\d{1,3}(?:[.,]\d{3})*[.,]\d{2,3}"
+    row_re = re.compile(
+        r"^\s*\d+\s+[A-Z]{2}\s+(?P<name>.+?)\s+"
+        r"(?P<ean>\d{13})\s+(?P<qty>\d+(?:[.,]\d+)?)\s+"
+        rf"(?P<cost>{amount})\s+.*?"
+        rf"(?P<net>{amount})\s+21[.,]00\s+(?P<total>{amount})\s*$",
+        re.I,
+    )
+    for line in lines:
+        match = row_re.match(line)
+        if not match:
+            continue
+        name = clean_invoice_name(match.group("name"))
+        qty = to_number(match.group("qty"))
+        net_price = to_number(match.group("net"))
+        if is_valid_invoice_product_name(name) and qty is not None and net_price is not None:
+            rows.append({
+                "ean": match.group("ean"),
+                "name": name,
+                "qty": qty,
+                "price": net_price,
+                "price_candidates": extract_money_numbers(line),
+            })
+    return rows
 
 
 def parse_invoice_rows_by_headers(pages):
